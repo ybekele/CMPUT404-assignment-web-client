@@ -113,8 +113,9 @@ class HTTPClient(object):
         if host == None:
             raise ConnectionError("Can't find the host")
         path = parsed_url.path
-        if path == None:
-            raise ConnectionError("Can't find this path")
+        if not path:
+            path = '/'
+            # raise ConnectionError("Can't find this path")
         port = parsed_url.port
 
         if port == None:
@@ -122,6 +123,7 @@ class HTTPClient(object):
         #get_response = make_response("GET", host, path)
         #get_request = "GET " + path + " HTTP/1.1\r\n" + "Host: {}\r\n\r\n".format(host)
         get_request = ('GET {} HTTP/1.1\r\nHost: {} \r\nConnection: close\r\n\r\n'.format(path, host))
+        print(get_request)
         self.connect(host, port)
         self.sendall(get_request)
         data = self.recvall(self.socket)
@@ -141,6 +143,8 @@ class HTTPClient(object):
         parsed_url = urlparse(url)
         host = parsed_url.hostname
         path = parsed_url.path
+        if not path:
+            path = '/'
         port = parsed_url.port
 
         if host == None:
