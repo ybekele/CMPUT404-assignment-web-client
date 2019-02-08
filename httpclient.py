@@ -49,7 +49,7 @@ class HTTPClient(object):
         #WILL BE 1XX,2XX,3XX,4XX
         print(line)
         code = int(line[1])
-        print(code)
+
 
 
         return(code)
@@ -67,16 +67,13 @@ class HTTPClient(object):
         return body
 
     def sendall(self, data):
-        print("this is sendall")
         self.socket.sendall(data.encode('utf-8'))
 
     def close(self):
-        print("this is close")
         self.socket.close()
 
     # read everything from the socket
     def recvall(self, sock):
-        print("this is recvall")
         buffer = bytearray()
         done = False
         while not done:
@@ -108,21 +105,29 @@ class HTTPClient(object):
     #         return
 
     def GET(self, url, args=None):
+        code = 500
         #a URL: scheme://netloc/path;parameters?query#fragment
         parsed_url = urlparse(url)
         host = parsed_url.hostname
+
+        if host == None:
+            raise ConnectionError("Can't find the host")
         path = parsed_url.path
+        if path == None:
+            raise ConnectionError("Can't find this path")
         port = parsed_url.port
 
         if port == None:
             port = 80
         #get_response = make_response("GET", host, path)
-        get_request = "GET " + path + " HTTP/1.1\r\n" + "Host: {}\r\n\r\n".format(host)
-
+        #get_request = "GET " + path + " HTTP/1.1\r\n" + "Host: {}\r\n\r\n".format(host)
+        get_request = ('GET {} HTTP/1.1\r\nHost: {} \r\nConnection: close\r\n\r\n'.format(path, host))
         self.connect(host, port)
         self.sendall(get_request)
         data = self.recvall(self.socket)
         self.close()
+        if data == None:
+            raise Exception("The response was empty")
         code = self.get_code(data)
         body = self.get_body(data)
 
@@ -132,42 +137,54 @@ class HTTPClient(object):
 
 
     def POST(self, url, args=None):
+        code = 500
         parsed_url = urlparse(url)
         host = parsed_url.hostname
         path = parsed_url.path
         port = parsed_url.port
+
+        if host == None:
+            raise ConnectionError("Can't find this host")
+        path = parsed_url.path
+        if path == None:
+            raise ConnectionError("Can't find this path")
         if port == None:
             port = 80
-        if args != None:
+
+        args_encoded = ""
+        if args is not None:
             args_encoded = urlencode(args)
 
 
-        if (path != None) and (host != None):
-            post_request = "POST " + path + " HTTP/1.1\r\n" + "Host: {}\r\n\r\n".format(host)
-            post_request += "Content-Type: application/x-www-form-urlencoded\r\n"
+
+        #if (path != None) and (host != None):
+        #    post_request = "POST " + path + " HTTP/1.1\r\n" + "Host: {}\r\n".format(host)
+        #    post_request += "Content-Type: application/x-www-form-urlencoded\r\n\\r\n"
 
             # if arguments were provided we have to set the content length
-            if (args != None):
-                post_request += "Content-Length: {}\r\n\r\n".format(len(args_encoded))
-                post_request += args_encoded
 
-            # if arguments were not provided we assume the body is 0
-            else:
-                post_request += "Content-length: 0\r\n\r\n"
+        #post_request += "Content-Length: {}\r\n\r\n".format(str(len(args_encoded)))
+        #post_request += args_encoded
+        post_request = ('POST {} HTTP/1.1\r\nHost: {} \r\n'.format(path, host)) + ('Content-Type: application/x-www-form-urlencoded\r\n') + ('Content-Length:{}\r\nConnection: close\r\n\r\n{}'.format(str(len(args_encoded)),args_encoded))
+
 
         # if we can't find the host or path
-        else:
-            raise Exception('Either the path {} or host {} does not exist'.format(path, host))
-            return
+
+        # else:
+        #     raise Exception('Either the path {} or host {} does not exist'.format(path, host))
+        #     return
 
         self.connect(host, port)
         self.sendall(post_request)
         data = self.recvall(self.socket)
+
         self.close()
+        if data == None:
+            raise Exception("The response was empty")
         code = self.get_code(data)
         body = self.get_body(data)
 
-        self.sendall(post_request)
+
     #    print(body)
         return HTTPResponse(code, body)
 
@@ -186,11 +203,6 @@ if __name__ == "__main__":
         help()
         sys.exit(1)
     elif (len(sys.argv) == 3):
-        print("went in the ELIF")
-        print("sys argv 2")
-        print(sys.argv[2])
-        print("sys argv 1")
-        print(sys.argv[1])
         print(client.command( sys.argv[2], sys.argv[1] ))
     else:
         print(client.command( sys.argv[1] ))
