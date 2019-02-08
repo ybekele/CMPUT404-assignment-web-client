@@ -132,8 +132,9 @@ class HTTPClient(object):
             raise Exception("The response was empty")
         code = self.get_code(data)
         body = self.get_body(data)
-
-        print(body)
+#https://www.programcreek.com/python/example/52597/sys.stdout.write
+        sys.stdout.write(body)
+        #print(body)
         #code = 500
         return HTTPResponse(code, body)
 
@@ -189,7 +190,8 @@ class HTTPClient(object):
         body = self.get_body(data)
 
 
-        print(body)
+        #print(body)
+        sys.stdout.write(body)
         return HTTPResponse(code, body)
 
     def command(self, url, command="GET", args=None):
